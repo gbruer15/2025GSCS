@@ -1,0 +1,383 @@
+---
+title: Seismic monitoring of CO~2~ using ensemble Kalman filtering
+format:
+  poster-typst: 
+    size: "48x36"
+    poster-authors: "Grant Bruer^1^, Abhinav Prakash Gahlot^1^^2^^3^, Felix Herrmann^1^^2^^3^, Edmond Chow^1^"
+    departments: "^1^School of Computational Science and Engineering, ^2^School of Earth and Atmospheric Sciences, ^3^School of Electrical and Computer Engineering"
+    footer-left-content: |
+      ![](./images/School_of_Computational_Science_Eng_White.svg){width="100%" fig-alt="Georgia Tech Computational Science and Engineering Logo" fig-align="left"}
+    footer-center-content: |
+      Georgia Scientific
+      \
+      Computing Symposium 2025
+    footer-right-content: |
+      # Acknowledgements {.unnumbered}
+      This work was supported by the National Science Foundation under Grant 2203821. Any
+      opinions, findings, and conclusions or recommendations expressed in this material
+      arethose of the author(s) and do not necessarily reflect the views of the National
+      Science Foundation.
+    header-left-content: |
+        # Summary {.unnumbered}
+
+        1. We simulate subsurface CO~2~ injection into porous rock with seismic measurements,
+        2. treat the permeability field as a random variable,
+        3. apply the EnKF to estimate the CO~2~ saturation field,
+        4. compare the EnKF to two baselines, and
+        5. test the EnKF's performance with different noise parameters.
+
+    footer-emails: "gbruer@gatech.edu"
+    footer-color: "b3a369"
+    footer-text-color: "ffffff"
+    title-font-size: 72
+    keywords: []
+    # [carbon capture and storage,
+    #   Kalman filters,
+    #   nonlinear dynamical systems,
+    #   seismic measurements]
+
+---
+
+
+# Motivation
+
+## CO~2~ injection
+- Carbon-negative strategies are required to mitigate climate change.
+- Injecting CO~2~ (carbon dioxide) underground is a well-developed technology for the oil industry.
+- CO~2~ can be injected underground for long-term storage.
+- CO~2~ storage must be monitored to mitigate risks (e.g., leakage, over-pressure)
+
+## Monitoring method
+
+- Seismic measurements are non-intrusive and more informative than wells.
+- Seismic measurements are noisy and nonlinear.
+- Known fluid dynamics can provide additional information.
+- Using both sources of information requires data assimilation techniques.
+
+**The EnKF is a scalable, mature technique with success on large, nonlinear systems.**
+
+# Background
+
+::: {}
+
+```{=typst} 
+// #show: columns.with(2, gutter: 6pt)
+#grid(
+    columns: (33%, auto),
+    [
+```
+
+- Hidden state: $\mathbf{x}$
+    - CO~2~ saturation field $\mathbf{S}$
+    - Pressure field $\mathbf{P}$
+    - Permeability $\mathbf{K}$
+- Observation: $\mathbf{y}$
+    - Seismic data
+
+```{=typst} 
+], [
+```
+- Time $t$ indexed by $n$
+- Fluid dynamics: $\mathbf{x}^n = f(\mathbf{x}^{n-1})$
+- Seismic imaging: $\mathbf{y}^n = h(\mathbf{x}^n, \nu \mathbf{\eta})$, comprised of:
+    - noise $\nu \mathbf{\eta}$ with signal-to-noise ratio $-20 \log \nu$ dB
+    - Rock physics model: maps $\mathbf{S}$ to seismic velocity $\mathbf{m}$ and density $\mathbf{\rho}$.
+    - Seismic model: simulates seismic measurements of $\mathbf{m}$ and $\mathbf{\rho}$
+
+```{=typst} 
+])
+```
+
+:::
+
+**Both the observation and transition operators require numerically solving nonlinear PDEs.**
+
+
+## Data assimilation
+
+
+::: {#fig-predict-update-loop}
+
+::: {.block stroke="rgb(\"54585A\")" fill="rgb(\"F9F6E5\")" inset="8pt" radius="4pt"}
+```{=typst} 
+#set align(left)
+#set text(size: 22pt)
+```
+
+- Starting with a priori knowledge $p(\mathbf{x}^0) \equiv p(\mathbf{x}^0 | \mathbf{y}^{1:0})$:
+- For each new observation $\mathbf{y}^n$:
+    - We have a previous posterior: $p(\mathbf{x}^{n-1} | \mathbf{y}^{1:n-1})$.
+    - Predict: $p(\mathbf{x}^n | \mathbf{y}^{1:n-1} ) = \int p(\mathbf{x}^n | \mathbf{x}^{n-1}) p(\mathbf{x}^{n-1} | \mathbf{y}^{1:n-1}) \,d\mathbf{x}^{n-1}$
+    - Update: $p(\mathbf{x}^n | \mathbf{y}^{1:n} ) \propto p(\mathbf{y}^n | \mathbf{x}^{n}) p(\mathbf{x}^{n} | \mathbf{y}^{1:n-1})$
+:::
+
+Classical data assimilation predict-update loop
+:::
+
+
+
+- Kalman filter: classical method that assumes linear operators and Gaussian distributions.
+
+
+::: {}
+
+```{=typst} 
+#show: columns.with(2, gutter: 6pt)
+```
+$$
+\begin{align}
+\mathbf{\mu}_a &= \mathbf{\mu}_f + K(\mathbf{y}^* - h(\mathbf{\mu}_f, \mathbf{0}))\\
+B_a &= (I - KH) B_f
+\end{align}
+$$
+
+```{=typst} 
+#colbreak()
+```
+
+$$
+K = \mathrm{cov}(\mathbf{x}_f, \mathbf{y}_f) \mathrm{cov}(\mathbf{y}_f)^{-1}
+$$
+
+:::
+
+- **EnKF**: Monte-Carlo method that represents distributions as samples
+    - Transitions each sample individually
+    - Observes each sample individually
+    - Updates samples based on the measured $\mathbf{y}$ and the sample covariance
+
+::: {}
+
+```{=typst} 
+#show: columns.with(2, gutter: 6pt)
+```
+
+$$
+\begin{align}
+\mathbf{y}^* &= h(\mathbf{x}^*, \underline{\nu^*} \mathbf{\eta}^*) \\
+\mathbf{y}_{f,i} &= h(\mathbf{x}_{f,i}, \underline{\nu} \mathbf{\eta}_i) \\
+\mathbf{x}_{a,i} &= \mathbf{x}_{f,i} + K
+(
+    \mathbf{y}^* -
+    \mathbf{y}_{f,i}
+)\\
+\end{align}
+$$
+
+
+```{=typst} 
+#colbreak()
+```
+
+$$
+\begin{align}
+K &= \widehat{\mathrm{cov}}\big(\mathbf{x}_f, \mathbf{y}_f\big)
+\bigg(\widehat{\mathrm{cov}}(h(\mathbf{x}_f, \underline{\alpha \nu} \mathbf{\eta}))
+    + R
+\bigg)^{-1} \\
+R &= \underline{\nu^2\beta}^2 I
+\end{align}
+$$
+
+:::
+
+
+```{=typst} 
+#grid(
+    columns: (33%, auto),
+    [
+```
+
+- $\nu^*$: true noise scale
+- $\nu$: estimated noise scale
+
+```{=typst} 
+], [
+```
+
+- $\beta$: regularization scale
+- $\alpha$: 0 or 1 to choose whether noise is used in $\mathrm{cov}(\mathbf{y}_f)$
+
+```{=typst} 
+])
+```
+
+# Experiments
+
+We apply EnKF to a seismic monitoring example using scalable, open-source tools (JutulDarcy.jl, JUDI.jl).
+
+
+```{=typst} 
+#grid(
+    columns: (60%, auto),
+    [
+```
+
+Simplifying assumptions:
+
+1. All information is known a priori except for $\mathbf{K}$.
+2. We can generate 256 samples of possible $\mathbf{K}$.
+
+We compare EnKF to two baselines for estimating $\mathbf{S}$:
+
+- **JustObs**: solely uses $\mathbf{y}$ and observation function
+- **NoObs**: solely uses samples of $\mathbf{K}$ and transition function
+
+We also test EnKF performance for modified $\alpha$, $\beta$, $\nu$, and $\nu^*$.
+
+```{=typst} 
+], [
+```
+
+![Experimental setup](./images/ground_truth/experiment_setup.png){width="100%"}
+
+```{=typst} 
+])
+```
+
+
+![Workflow diagram](./images/workflow_diagram.svg){width="100%"}
+
+
+# Results
+
+::: {#fig-gt-sat-perm}
+
+![](./images/ground_truth/saturation_colorbar.png){width="90%"}
+
+![Year 1](./images/ground_truth/sat_perm/saturation-0006.png){width="90%" #fig-gt-sat-perm1}
+
+![Year 5](./images/ground_truth/sat_perm/saturation-0026.png){width="90%" #fig-gt-sat-perm5}
+
+Ground-truth saturation field $\mathbf{S}$ overlayed on permeability $\mathbf{K}$
+:::
+
+<!-- ::: {#fig-gt-rho-vel layout-ncol=2}
+
+![Density](./images/ground_truth/density.png){width="100%" #fig-rho}
+
+![Velocity](./images/ground_truth/pwave_velocity_no_ylabel.png){width="94%" #fig-vel}
+
+Ground-truth seismic parameters
+:::
+ -->
+
+::: {#fig-gt-rtms layout-ncol=2}
+
+![Year 1](./images/ground_truth/rtm/rtms_offset_noisy_cb_balance-0006.png){width="100%" #fig-gt-rtm1}
+
+![Year 5](./images/ground_truth/rtm/rtms_offset_noisy_cb_balance-0026.png){width="100%" #fig-gt-rtm2}
+
+Ground-truth seismic measurements
+:::
+
+::: {}
+
+
+<!-- 
+![](./images/ground_truth/permeability_colorbar.png){width="100%"}
+
+![Ensemble permeability mean](./images/ensemble_params/mean_permeability.png){width="100%"}
+
+![Ensemble permeability standard deviation](./images/ensemble_params/std_permeability.png){width="100%"}
+:::
+
+![Ground truth permeability](./images/ground_truth/permeability.png){width="100%"}
+ -->
+
+
+![NoObs prediction at year 5](./images/noobs_plume/mean_saturation-0010.png){width="100%"}
+
+![EnKF analysis at year 5](./images/enkf_plume/mean_saturation-0011.png){width="100%"}
+
+
+<!-- ![Figure](./images/ground_truth/sat/saturation-0026.png){width="100%"} -->
+
+
+
+:::: {}
+
+
+```{=typst}
+#grid(
+    columns: (50%, auto),
+    align: center + bottom,
+    [
+```
+
+![Change $\beta$ when $\alpha = 0$](./images/enkf_error/alpha_beta_l2_errors_vs_noise.png){width="95%"}
+
+```{=typst} 
+], [
+```
+
+![Change $\beta$ when $\alpha = 1$](./images/enkf_error/beta_l2_errors_vs_noise.png){width="95%"}
+
+```{=typst} 
+])
+```
+::::
+
+:::: {}
+
+```{=typst}
+#grid(
+    columns: (50%, auto),
+    align: center + bottom,
+    [
+```
+
+![Change $\nu$](./images/enkf_error/nu_l2_errors_vs_snr.png){width="95%"}
+
+```{=typst} 
+], [
+```
+
+![Change $\nu^*$, keeping $\nu = \nu^*$](./images/enkf_error/nutrue_l2_errors_vs_snr.png){width="95%"}
+
+
+```{=typst} 
+])
+```
+
+::::
+
+
+:::: {}
+
+```{=typst}
+#grid(
+    columns: (50%, auto),
+    align: center + top,
+    [
+```
+
+![RMSE for 3 methods over time](./images/l2_errors_star.png){width="95%"}
+
+```{=typst} 
+], [
+```
+
+```{=typst}
+#set align(left)
+```
+
+# Conclusions
+
+- EnKF error < JustObs error and NoObs error.
+- For $\alpha = 0$,
+    - sensitive to noise parameters
+    - best results using noise eigenvalues
+- For $\alpha = 1$,
+    - insensitive over large range
+    - similar error to lowest $\alpha = 0$ error
+
+**EnKF is a promising data assimilation method for monitoring subsurface CO~2~ with seismic measurements.**
+
+
+```{=typst} 
+])
+```
+
+::::
+
