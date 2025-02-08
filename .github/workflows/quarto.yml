@@ -35,7 +35,7 @@ jobs:
       - name: Setup quarto
         uses: quarto-dev/quarto-actions/setup@v2
       - name: Build HTML
-        run: quarto render *.qmd --output-dir output && touch output/index.html
+        run: quarto render main.qmd --output-dir output && cp index.html output/index.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
