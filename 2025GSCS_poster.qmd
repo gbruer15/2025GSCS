@@ -3,7 +3,7 @@ title: Seismic monitoring of CO~2~ using ensemble Kalman filtering
 format:
   poster-typst: 
     size: "48x36"
-    poster-authors: "Grant Bruer^1^, Abhinav Prakash Gahlot^1^^2^^3^, Felix Herrmann^1^^2^^3^, Edmond Chow^1^"
+    poster-authors: "Grant Bruer^1^, Abhinav Prakash Gahlot^2^, Felix Herrmann^1^^2^^3^, Edmond Chow^1^"
     departments: "^1^School of Computational Science and Engineering, ^2^School of Earth and Atmospheric Sciences, ^3^School of Electrical and Computer Engineering"
     footer-left-content: |
       ![](./images/School_of_Computational_Science_Eng_White.svg){width="100%" fig-alt="Georgia Tech Computational Science and Engineering Logo" fig-align="left"}
