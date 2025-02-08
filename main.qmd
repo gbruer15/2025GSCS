@@ -30,11 +30,20 @@ format:
     footer-color: "b3a369"
     footer-text-color: "ffffff"
     title-font-size: 72
-    keywords: []
-    # [carbon capture and storage,
-    #   Kalman filters,
-    #   nonlinear dynamical systems,
-    #   seismic measurements]
+    title-meta: "Seismic monitoring of CO2 using ensemble Kalman filtering"
+    author-meta: "Grant Bruer"
+    date-meta: "2025/02/08"
+    header-includes: |
+        #set document(
+            title: "Seismic monitoring of CO2 using ensemble Kalman filtering",
+            author: "Grant Bruer",
+            keywords: (
+                "carbon capture and storage",
+                "Kalman filters",
+                "nonlinear dynamical systems",
+                "seismic measurements"
+            )
+        )
 
 ---
 

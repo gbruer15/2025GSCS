@@ -12,6 +12,8 @@
 //   - https://typst.app/docs/tutorial/making-a-template/
 //   - https://github.com/typst/templates
 
+
+
 #show: doc => poster(
   $if(title)$ title: [$title$], $endif$
   // TODO: use Quarto's normalized metadata.
